@@ -100,35 +100,37 @@ client.on('messageCreate', async (message) => {
     if (connection && message.member?.voice?.channel) {
       try {
         console.log(`🗣️ Đang đọc tin nhắn: "${message.content}"`);
+        
+        if (!message.content || message.content.trim().length === 0) {
+          console.log('❌ Tin nhắn trống, bỏ qua');
+          return;
+        }
+        
         const url = googleTTS.getAudioUrl(message.content, { lang: 'vi', slow: false });
         console.log(`🔗 TTS URL: ${url}`);
         
-        const player = createAudioPlayer();
-        
-        // Thử tạo resource trực tiếp từ URL stream
-        let resource;
-        try {
-          // Method 1: Direct URL
-          resource = createAudioResource(url, {
-            inputType: 'url',
-            inlineVolume: true
-          });
-          console.log('✅ Sử dụng direct URL method');
-        } catch (urlError) {
-          console.error('❌ Direct URL failed, trying stream method:', urlError);
-          
-          // Method 2: HTTPS stream
-          const stream = https.get(url);
-          resource = createAudioResource(stream, {
-            inputType: 'stream',
-            inlineVolume: true
-          });
-          console.log('✅ Sử dụng stream method');
+        if (!url) {
+          console.error('❌ Không thể tạo TTS URL');
+          message.reply('❌ Không thể tạo audio từ tin nhắn này!');
+          return;
         }
         
+        const player = createAudioPlayer();
+        
+        // Tạo audio resource đơn giản
+        const resource = createAudioResource(url);
+        console.log('✅ Đã tạo audio resource');
+        
         player.on('error', error => {
-          console.error('❌ Player error:', error);
-          message.reply('❌ Lỗi khi phát audio!');
+          console.error('❌ Player error details:', error);
+          console.error('❌ Error stack:', error.stack);
+          message.reply(`❌ Lỗi player: ${error.message}`);
+        });
+        
+        resource.on('error', error => {
+          console.error('❌ Resource error details:', error);
+          console.error('❌ Resource error stack:', error.stack);
+          message.reply(`❌ Lỗi resource: ${error.message}`);
         });
         
         player.on(AudioPlayerStatus.Playing, () => {
@@ -139,9 +141,14 @@ client.on('messageCreate', async (message) => {
           console.log('⏹️ Đã phát xong audio');
         });
         
-        connection.subscribe(player);
-        player.play(resource);
+        const subscription = connection.subscribe(player);
+        if (!subscription) {
+          console.error('❌ Không thể subscribe player vào connection');
+          message.reply('❌ Không thể kết nối audio!');
+          return;
+        }
         
+        player.play(resource);
         console.log('🎵 Đã gửi lệnh phát audio');
 
         // Bot sẽ ở lại voice channel sau khi đọc xong
