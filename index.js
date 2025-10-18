@@ -52,6 +52,18 @@ client.on('messageCreate', async (message) => {
     }
   }
 
+  // lệnh test để kiểm tra TTS
+  else if (message.content === '!test') {
+    const connection = getVoiceConnection(message.guild.id);
+    if (connection) {
+      message.reply('🔊 Bot đã trong voice channel. Hãy thử gõ tin nhắn bất kỳ!');
+      console.log('🧪 Test command: Bot in voice channel');
+    } else {
+      message.reply('❌ Bot chưa join voice channel. Gõ !join trước!');
+      console.log('🧪 Test command: Bot NOT in voice channel');
+    }
+  }
+
   // chỉ đọc tin nhắn khi bot đã ở trong voice channel
   else {
     const connection = getVoiceConnection(message.guild.id);
@@ -59,18 +71,38 @@ client.on('messageCreate', async (message) => {
     // chỉ nói khi bot đã join voice channel và user cũng ở trong voice channel
     if (connection && message.member?.voice?.channel) {
       try {
+        console.log(`🗣️ Đang đọc tin nhắn: "${message.content}"`);
         const url = googleTTS.getAudioUrl(message.content, { lang: 'vi', slow: false });
+        console.log(`🔗 TTS URL: ${url}`);
         
         const player = createAudioPlayer();
         const resource = createAudioResource(url);
+        
+        player.on('error', error => {
+          console.error('❌ Player error:', error);
+          message.reply('❌ Lỗi khi phát audio!');
+        });
+        
+        player.on(AudioPlayerStatus.Playing, () => {
+          console.log('▶️ Đang phát audio...');
+        });
+        
+        player.on(AudioPlayerStatus.Idle, () => {
+          console.log('⏹️ Đã phát xong audio');
+        });
+        
         player.play(resource);
         connection.subscribe(player);
 
         // Bot sẽ ở lại voice channel sau khi đọc xong
       } catch (error) {
-        console.error('TTS Error:', error);
+        console.error('❌ TTS Error:', error);
         message.reply('❌ Có lỗi khi đọc tin nhắn!');
       }
+    } else if (!connection) {
+      console.log('❌ Bot chưa join voice channel');
+    } else if (!message.member?.voice?.channel) {
+      console.log('❌ User không ở trong voice channel');
     }
     // nếu bot chưa join hoặc user không ở voice channel thì không làm gì cả
   }
