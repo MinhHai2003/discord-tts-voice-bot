@@ -1,0 +1,24 @@
+{
+  "name": "my-discord-bot",
+  "version": "1.0.0",
+  "description": "Discord TTS Voice Bot - 24/7 Vietnamese Text-to-Speech",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@discordjs/voice": "^0.19.0",
+    "@snazzah/davey": "^0.1.7",
+    "discord.js": "^14.23.2",
+    "dotenv": "^17.2.3",
+    "ffmpeg-static": "^5.2.0",
+    "google-tts-api": "^2.0.2"
+  }
+}
