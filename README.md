@@ -11,7 +11,9 @@ Bot Discord đọc tin nhắn bằng tiếng Việt trong voice channel.
 ## 📋 Lệnh
 
 - `!join` - Bot vào voice channel
-- `!leave` - Bot rời voice channel
+- `!leave` - Bot rời voice channel  
+- `!test` - Kiểm tra trạng thái bot
+- `!tts test` - Test audio trực tiếp
 - Gõ tin nhắn bất kỳ - Bot đọc to (khi đã join)
 
 ## 🚀 Invite Bot
