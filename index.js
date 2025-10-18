@@ -117,9 +117,15 @@ client.on('messageCreate', async (message) => {
         
         const player = createAudioPlayer();
         
-        // Tạo audio resource đơn giản
-        const resource = createAudioResource(url);
+        // Tạo audio resource với options cho cloud environment
+        const resource = createAudioResource(url, {
+          metadata: {
+            title: 'TTS Audio'
+          }
+        });
         console.log('✅ Đã tạo audio resource');
+        console.log('🔍 Resource type:', typeof resource);
+        console.log('🔍 Resource readable:', resource.readable ? 'yes' : 'no');
         
         player.on('error', error => {
           console.error('❌ Player error details:', error);
@@ -127,11 +133,14 @@ client.on('messageCreate', async (message) => {
           message.reply(`❌ Lỗi player: ${error.message}`);
         });
         
-        resource.on('error', error => {
-          console.error('❌ Resource error details:', error);
-          console.error('❌ Resource error stack:', error.stack);
-          message.reply(`❌ Lỗi resource: ${error.message}`);
-        });
+        // Resource error handling (chỉ nếu resource có method .on)
+        if (typeof resource.on === 'function') {
+          resource.on('error', error => {
+            console.error('❌ Resource error details:', error);
+            console.error('❌ Resource error stack:', error.stack);
+            message.reply(`❌ Lỗi resource: ${error.message}`);
+          });
+        }
         
         player.on(AudioPlayerStatus.Playing, () => {
           console.log('▶️ Đang phát audio...');
