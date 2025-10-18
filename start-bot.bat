@@ -1,9 +1,0 @@
-@echo off
-echo Starting Discord Bot...
-cd /d "C:\my-discord-bot\my-discord-bot"
-:loop
-echo Bot is starting...
-node index.js
-echo Bot crashed, restarting in 5 seconds...
-timeout /t 5 /nobreak >nul
-goto loop
