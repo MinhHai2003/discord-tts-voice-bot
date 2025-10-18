@@ -76,7 +76,10 @@ client.on('messageCreate', async (message) => {
         const url = googleTTS.getAudioUrl(testText, { lang: 'vi', slow: false });
         
         const player = createAudioPlayer();
-        const resource = createAudioResource(url);
+        const resource = createAudioResource(url, {
+          inputType: 'url',
+          inlineVolume: true
+        });
         
         player.play(resource);
         connection.subscribe(player);
@@ -89,6 +92,17 @@ client.on('messageCreate', async (message) => {
       }
     } else {
       message.reply('❌ Bot cần ở trong voice channel và bạn cũng vậy!');
+    }
+  }
+
+  // lệnh debug connection
+  else if (message.content === '!debug') {
+    const connection = getVoiceConnection(message.guild.id);
+    if (connection) {
+      message.reply(`🔍 Connection status: ${connection.state.status}\n🔍 Networking state: ${connection.state.networking?.state || 'unknown'}`);
+      console.log('🔍 Full connection state:', connection.state);
+    } else {
+      message.reply('❌ Không có connection');
     }
   }
 
@@ -117,11 +131,13 @@ client.on('messageCreate', async (message) => {
         
         const player = createAudioPlayer();
         
-        // Tạo audio resource với options cho cloud environment
+        // Tạo audio resource với FFmpeg options cho cloud environment
         const resource = createAudioResource(url, {
+          inputType: 'url',
           metadata: {
             title: 'TTS Audio'
-          }
+          },
+          inlineVolume: true
         });
         console.log('✅ Đã tạo audio resource');
         console.log('🔍 Resource type:', typeof resource);
@@ -150,12 +166,18 @@ client.on('messageCreate', async (message) => {
           console.log('⏹️ Đã phát xong audio');
         });
         
+        // Debug connection state trước khi subscribe
+        console.log('🔍 Connection state before subscribe:', connection.state.status);
+        console.log('🔍 Connection ready:', connection.state.status === 'ready');
+        
         const subscription = connection.subscribe(player);
         if (!subscription) {
           console.error('❌ Không thể subscribe player vào connection');
           message.reply('❌ Không thể kết nối audio!');
           return;
         }
+        
+        console.log('✅ Subscription created successfully');
         
         player.play(resource);
         console.log('🎵 Đã gửi lệnh phát audio');
