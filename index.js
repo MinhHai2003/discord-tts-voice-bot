@@ -1,6 +1,7 @@
 const { Client, GatewayIntentBits } = require('discord.js');
 const { joinVoiceChannel, getVoiceConnection, createAudioPlayer, createAudioResource, AudioPlayerStatus } = require('@discordjs/voice');
 const googleTTS = require('google-tts-api');
+const https = require('https');
 
 require('dotenv').config();
 const TOKEN = process.env.DISCORD_TOKEN;
@@ -58,9 +59,36 @@ client.on('messageCreate', async (message) => {
     if (connection) {
       message.reply('🔊 Bot đã trong voice channel. Hãy thử gõ tin nhắn bất kỳ!');
       console.log('🧪 Test command: Bot in voice channel');
+      console.log('🔍 Connection state:', connection.state.status);
     } else {
       message.reply('❌ Bot chưa join voice channel. Gõ !join trước!');
       console.log('🧪 Test command: Bot NOT in voice channel');
+    }
+  }
+
+  // lệnh test audio trực tiếp
+  else if (message.content === '!tts test') {
+    const connection = getVoiceConnection(message.guild.id);
+    if (connection && message.member?.voice?.channel) {
+      try {
+        console.log('🧪 Testing direct TTS...');
+        const testText = 'Xin chào, đây là test audio';
+        const url = googleTTS.getAudioUrl(testText, { lang: 'vi', slow: false });
+        
+        const player = createAudioPlayer();
+        const resource = createAudioResource(url);
+        
+        player.play(resource);
+        connection.subscribe(player);
+        
+        message.reply('🎵 Đang test audio...');
+        console.log('🎵 Test audio sent');
+      } catch (error) {
+        console.error('❌ Test TTS error:', error);
+        message.reply('❌ Lỗi test TTS: ' + error.message);
+      }
+    } else {
+      message.reply('❌ Bot cần ở trong voice channel và bạn cũng vậy!');
     }
   }
 
@@ -76,7 +104,27 @@ client.on('messageCreate', async (message) => {
         console.log(`🔗 TTS URL: ${url}`);
         
         const player = createAudioPlayer();
-        const resource = createAudioResource(url);
+        
+        // Thử tạo resource trực tiếp từ URL stream
+        let resource;
+        try {
+          // Method 1: Direct URL
+          resource = createAudioResource(url, {
+            inputType: 'url',
+            inlineVolume: true
+          });
+          console.log('✅ Sử dụng direct URL method');
+        } catch (urlError) {
+          console.error('❌ Direct URL failed, trying stream method:', urlError);
+          
+          // Method 2: HTTPS stream
+          const stream = https.get(url);
+          resource = createAudioResource(stream, {
+            inputType: 'stream',
+            inlineVolume: true
+          });
+          console.log('✅ Sử dụng stream method');
+        }
         
         player.on('error', error => {
           console.error('❌ Player error:', error);
@@ -91,8 +139,10 @@ client.on('messageCreate', async (message) => {
           console.log('⏹️ Đã phát xong audio');
         });
         
-        player.play(resource);
         connection.subscribe(player);
+        player.play(resource);
+        
+        console.log('🎵 Đã gửi lệnh phát audio');
 
         // Bot sẽ ở lại voice channel sau khi đọc xong
       } catch (error) {
